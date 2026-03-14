@@ -1,31 +1,55 @@
-# import pandas as pd 
-# import requests
-# from bs4 import BeautifulSoup
-
-# res = requests.get("https://en.wikipedia.org/wiki/List_of_S&P_500_companies")
-# soup = BeautifulSoup(res.content, "html")
-# table = soup.find(id="constituents") #[0]
-# print(table)
-# # df = pd.read_html(str(table))
-# # print(df[0].to_json(orient="records"))
 
 import pandas as pd 
 from bs4 import BeautifulSoup
 from urllib.request import Request, urlopen
 
-site= "https://en.wikipedia.org/wiki/List_of_S&P_500_companies"
-hdr = {'User-Agent': 'Mozilla/5.0'}
-req = Request(site,headers=hdr)
-page = urlopen(req)
-soup = BeautifulSoup(page, 'html.parser')
+def get_sp500_tickers():
+    site= "https://en.wikipedia.org/wiki/List_of_S&P_500_companies"
+    hdr = {'User-Agent': 'Mozilla/5.0'}
+    req = Request(site,headers=hdr)
+    page = urlopen(req)
+    soup = BeautifulSoup(page, 'html.parser')
+    table = soup.find("table") #[0]
+    df = pd.read_html(str(table))
+    tickers = list(df[0].Symbol)
+    return tickers
 
-table = soup.find("table") #[0]
+tickers = get_sp500_tickers()
 
-df = pd.read_html(str(table))
-print(df[0].head())
+def get_history(ticker, period_start, period_end, granularity="1d"):
+    import yfinance
 
-# table_MN = pd.read_html('https://en.wikipedia.org/wiki/Minnesota')
-# print(f'Total tables: {len(table_MN)}')
+    df = yfinance.Ticker(ticker).history(
+        start=period_start, 
+        end=period_end, 
+        interval=granularity, 
+        auto_adjust=True
+    ).reset_index()
+    df = df.rename(columns={
+        "Datetime": "datetime", 
+        "Open": "open",
+        "High": "high",
+        "Low": "low",
+        "Close": "close", 
+        "Volume": "volume"
+    })
 
-# table_MN = pd.read_html('https://en.wikipedia.org/wiki/Minnesota', match='Election results from statewide races')
-# len(table_MN)
+    if df.empty():
+        return pd.DataFrame()
+
+    df = df.drop(columns=["Dividends", "Stock Splits"])
+    df["datetime"] = df["datetime"].dt.tz_localize(pytz.utc)
+    input(df)
+
+from datetime import datetime
+import pytz
+
+period_start = datetime(2016, 1, 1, tzinfo=pytz.utc)
+period_end = datetime(2026, 1, 1, tzinfo=pytz.utc)
+
+# print(period_start)
+# print(period_end)
+get_history("MMM", period_start, period_end, "1d")
+
+# for ticker in tickers:
+#     get_history(ticker, period_start, period_end, "1d")
