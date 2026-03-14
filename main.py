@@ -26,7 +26,7 @@ def get_history(ticker, period_start, period_end, granularity="1d"):
         auto_adjust=True
     ).reset_index()
     df = df.rename(columns={
-        "Datetime": "datetime", 
+        "Date": "datetime", 
         "Open": "open",
         "High": "high",
         "Low": "low",
@@ -34,12 +34,15 @@ def get_history(ticker, period_start, period_end, granularity="1d"):
         "Volume": "volume"
     })
 
-    if df.empty():
+    # input(df.head())
+
+    if df.empty:
         return pd.DataFrame()
 
+    df["datetime"] = df["datetime"].dt.tz_convert(pytz.utc)
     df = df.drop(columns=["Dividends", "Stock Splits"])
-    df["datetime"] = df["datetime"].dt.tz_localize(pytz.utc)
-    input(df)
+    df = df.set_index("datetime", drop=True)
+    return df
 
 from datetime import datetime
 import pytz
@@ -49,7 +52,15 @@ period_end = datetime(2026, 1, 1, tzinfo=pytz.utc)
 
 # print(period_start)
 # print(period_end)
-get_history("MMM", period_start, period_end, "1d")
+# get_history("MMM", period_start, period_end, "1d")
 
-# for ticker in tickers:
-#     get_history(ticker, period_start, period_end, "1d")
+i = 0
+
+for ticker in tickers:
+    df = get_history(ticker, period_start, period_end)
+    print(ticker, df)
+
+    i += 1
+
+    if i >= 5:
+        break
