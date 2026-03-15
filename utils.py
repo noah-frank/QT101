@@ -6,6 +6,6 @@ def load_pickle(path):
         file = pickle.load(fp)
 
 def save_pickle(path, obj):
-    with open(path, "wb") as fp:
+    with lzma.open(path, "wb") as fp:
         pickle.dump(obj, fp)
 

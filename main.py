@@ -72,15 +72,21 @@ def get_histories(tickers, period_starts, period_ends, granularity="1d"):
     return tickers, dfs
 
 def get_tickers_dfs(start, end):
-    tickers = get_sp500_tickers()
-    starts = [start]*len(tickers)
-    ends = [end]*len(tickers)
-    tickers,dfs = get_histories(tickers, starts, ends, granularity="1d")
-    return tickers, {ticker:df for ticker,df in zip(tickers, dfs)}
+    from utils import load_pickle, save_pickle
+    try:
+        tickers, ticker_dfs = load_pickle("dataset.obj")
+    except Exception as err:
+        tickers = get_sp500_tickers()
+        starts = [start]*len(tickers)
+        ends = [end]*len(tickers)
+        tickers,dfs = get_histories(tickers, starts, ends, granularity="1d")
+        ticker_dfs = {ticker:df for ticker,df in zip(tickers, dfs)}
+        save_pickle("dataset.obj", (tickers, ticker_dfs))
+    return tickers, ticker_dfs
 
 
-period_start = datetime(2016, 1, 1, tzinfo=pytz.utc)
-period_end = datetime(2026, 1, 1, tzinfo=pytz.utc)
+period_start = datetime(2010, 1, 1, tzinfo=pytz.utc)
+period_end = datetime.now(pytz.utc)
 
 tickers, ticker_dfs = get_tickers_dfs(period_start, period_end)
 print(ticker_dfs)
